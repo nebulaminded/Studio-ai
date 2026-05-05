@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Studio AI — Deploy Checklist</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0b0b0f; color: #fff; font-family: 'Segoe UI', system-ui, sans-serif; padding: 40px 20px; min-height: 100vh; }
+  h1 { font-size: 36px; letter-spacing: 2px; margin-bottom: 6px; background: linear-gradient(90deg,#e94560,#f5a623); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .subtitle { color: #555; font-size: 14px; margin-bottom: 40px; }
+  .phase { margin-bottom: 36px; }
+  .phase-title { font-size: 13px; font-weight: 700; letter-spacing: 3px; color: #e94560; text-transform: uppercase; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .phase-title::after { content: ''; flex: 1; height: 1px; background: #1f1f2e; }
+  .step { background: #13131a; border: 1px solid #1f1f2e; border-radius: 10px; padding: 16px 18px; margin-bottom: 10px; display: flex; gap: 14px; align-items: flex-start; cursor: pointer; transition: border-color .2s; }
+  .step:hover { border-color: #2a2a3a; }
+  .step.done { border-color: #16c79a33; background: #0d1f1a; }
+  .checkbox { width: 22px; height: 22px; border: 2px solid #2a2a3a; border-radius: 6px; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; font-size: 13px; transition: all .2s; }
+  .step.done .checkbox { background: #16c79a; border-color: #16c79a; }
+  .step-body { flex: 1; }
+  .step-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+  .step.done .step-title { color: #16c79a; }
+  .step-desc { color: #666; font-size: 13px; line-height: 1.6; }
+  .step-desc a { color: #60d0ff; text-decoration: none; }
+  .step-desc a:hover { text-decoration: underline; }
+  code { background: #1f1f2e; border: 1px solid #2a2a3a; border-radius: 4px; padding: 1px 6px; font-size: 12px; font-family: 'Courier New', monospace; color: #f5a623; }
+  .code-block { background: #0f0f14; border: 1px solid #2a2a3a; border-radius: 8px; padding: 14px 16px; margin-top: 10px; font-family: 'Courier New', monospace; font-size: 12px; color: #ccc; line-height: 1.8; white-space: pre; overflow-x: auto; }
+  .tag { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 1px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; vertical-align: middle; }
+  .tag.stripe { background: #635bff22; color: #635bff; border: 1px solid #635bff44; }
+  .tag.github { background: #ffffff11; color: #aaa; border: 1px solid #333; }
+  .tag.vercel { background: #ffffff11; color: #fff; border: 1px solid #333; }
+  .tag.done-tag { background: #16c79a22; color: #16c79a; border: 1px solid #16c79a44; }
+  .progress-bar { height: 6px; background: #1f1f2e; border-radius: 3px; margin-bottom: 40px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg,#e94560,#f5a623); border-radius: 3px; transition: width .4s; }
+  .progress-label { display: flex; justify-content: space-between; font-size: 12px; color: #555; margin-bottom: 8px; }
+  .summary { background: linear-gradient(135deg,rgba(233,69,96,0.1),rgba(245,166,35,0.05)); border: 1px solid #e9456033; border-radius: 12px; padding: 24px; margin-top: 40px; }
+  .summary h2 { font-size: 18px; margin-bottom: 12px; }
+  .summary p { color: #888; font-size: 14px; line-height: 1.7; }
+  .summary strong { color: #f5a623; }
+</style>
+</head>
+<body>
+
+<h1>STUDIO AI</h1>
+<p class="subtitle">Complete deployment checklist — Stripe + Vercel</p>
+
+<div class="progress-label">
+  <span id="progress-text">0 of 12 steps complete</span>
+  <span id="progress-pct">0%</span>
+</div>
+<div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+
+<!-- PHASE 1: Files -->
+<div class="phase">
+  <div class="phase-title">Phase 1 — Project Files <span class="tag done-tag">DONE ✓</span></div>
+
+  <div class="step done" onclick="toggle(this)">
+    <div class="checkbox">✓</div>
+    <div class="step-body">
+      <div class="step-title">App built — Studio AI design editor</div>
+      <div class="step-desc">src/App.jsx, main.jsx, index.html, package.json, vite.config.js — all complete.</div>
+    </div>
+  </div>
+
+  <div class="step done" onclick="toggle(this)">
+    <div class="checkbox">✓</div>
+    <div class="step-body">
+      <div class="step-title">Stripe backend — api/checkout.js</div>
+      <div class="step-desc">Serverless function that creates Stripe checkout sessions. Reads keys from environment variables.</div>
+    </div>
+  </div>
+
+  <div class="step done" onclick="toggle(this)">
+    <div class="checkbox">✓</div>
+    <div class="step-body">
+      <div class="step-title">Vercel config — vercel.json</div>
+      <div class="step-desc">Routes API calls correctly and handles React single-page app routing.</div>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE 2: Stripe -->
+<div class="phase">
+  <div class="phase-title">Phase 2 — Stripe Setup <span class="tag stripe">STRIPE</span></div>
+
+  <div class="step" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="step-body">
+      <div class="step-title">Create Stripe account</div>
+      <div class="step-desc">Go to <a href="https://stripe.com" target="_blank">stripe.com</a> → Start now → verify email → add bank account for payouts.</div>
+    </div>
+  </div>
+
+  <div class="step" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="step-body">
+      <div class="step-title">Create Pro product ($12/mo)</div>
+      <div class="step-desc">
+        Dashboard → Products → Add product → Name: <code>Studio AI Pro</code> → Price: <code>$12.00</code> → Recurring → Monthly.<br/>
+        Copy the <strong>Price ID</strong> (starts with <code>price_</code>) — you'll need it in Step 9.
+      </div>
+    </div>
+  </div>
+
+  <div class="step" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="step-body">
+      <div class="step-title">Create Team product ($29/mo)</div>
+      <div class="step-desc">
+        Same steps → Name: <code>Studio AI Team</code> → Price: <code>$29.00</code> → Recurring → Monthly.<br/>
+        Copy this <strong>Price ID</strong> too.
+      </div>
+    </div>
+  </div>
+
+  <div class="step" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="step-body">
+      <div class="step-title">Copy your Stripe API keys</div>
+      <div class="step-desc">
+        Dashboard → Developers → API Keys.<br/>
+        Copy your <strong>Secret key</strong> (<code>sk_live_...</code>) — never share this.<br/>
+        Copy your <strong>Publishable key</strong> (<code>pk_live_...</code>) — optional for this setup.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE 3: GitHub -->
+<div class="phase">
+  <div class="phase-title">Phase 3 — Push to GitHub <span class="tag github">GITHUB</span></div>
+
+  <div class="step" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="step-body">
+      <div class="step-title">Create a GitHub account & new repo</div>
+      <div class="step-desc">Go to <a href="https://github.com" target="_blank">github.com</a> → Sign up (free) → New repository → Name: <code>studio-ai</code> → Public or Private → Create.</div>
+    </div>
+  </div>
+
+  <div class="step" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="step-body">
+      <div class="step-title">Install Node.js (if not already installed)</div>
+      <div class="step-desc">Download from <a href="https://nodejs.org" target="_blank">nodejs.org</a> → choose the LTS version → install. Then open Terminal (Mac) or Command Prompt (Windows).</div>
+    </div>
+  </div>
+
+  <div class="step" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="step-body">
+      <div class="step-title">Push project files to GitHub</div>
+      <div class="step-desc">
+        Put all the project files in a folder called <code>studio-ai</code> on your computer, then run:
+        <div class="code-block">cd studio-ai
+npm install
+git init
+git add .
+git commit -m "Studio AI launch"
+git remote add origin https://github.com/YOUR_USERNAME/studio-ai.git
+git push -u origin main</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE 4: Vercel -->
+<div class="phase">
+  <div class="phase-title">Phase 4 — Deploy on Vercel <span class="tag vercel">VERCEL</span></div>
+
+  <div class="step" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="step-body">
+      <div class="step-title">Create Vercel account & import project</div>
+      <div class="step-desc">Go to <a href="https://vercel.com" target="_blank">vercel.com</a> → Sign up with GitHub → New Project → Import your <code>studio-ai</code> repo → click Deploy.</div>
+    </div>
+  </div>
+
+  <div class="step" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="step-body">
+      <div class="step-title">Add environment variables in Vercel</div>
+      <div class="step-desc">
+        Vercel Dashboard → your project → Settings → Environment Variables. Add these three:
+        <div class="code-block">STRIPE_SECRET_KEY     =  sk_live_your_key_here
+STRIPE_PRICE_PRO      =  price_your_pro_id_here
+STRIPE_PRICE_TEAM     =  price_your_team_id_here</div>
+        Then go to Deployments → Redeploy so the new variables take effect.
+      </div>
+    </div>
+  </div>
+
+  <div class="step" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="step-body">
+      <div class="step-title">Test a payment end-to-end</div>
+      <div class="step-desc">
+        In Stripe, switch to <strong>Test mode</strong> first. Use test card <code>4242 4242 4242 4242</code>, any future date, any CVC.<br/>
+        Click Upgrade in your live app → complete checkout → confirm you land back on the app with Pro unlocked.
+      </div>
+    </div>
+  </div>
+
+  <div class="step" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="step-body">
+      <div class="step-title">Go live & share your URL</div>
+      <div class="step-desc">
+        Switch Stripe back to <strong>Live mode</strong>, swap in your live API keys in Vercel, redeploy.<br/>
+        Your app is live at <code>studio-ai.vercel.app</code> — or connect a custom domain in Vercel → Settings → Domains.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="summary">
+  <h2>💰 Revenue Potential</h2>
+  <p>
+    At <strong>10 Pro subscribers</strong> → $120/mo &nbsp;|&nbsp;
+    <strong>50 subscribers</strong> → $600/mo &nbsp;|&nbsp;
+    <strong>100 subscribers</strong> → $1,200/mo.<br/><br/>
+    Stripe deposits to your bank every <strong>2 days</strong> once verified.
+    Every future update you push to GitHub auto-deploys to Vercel instantly.
+  </p>
+</div>
+
+<script>
+  function toggle(el) {
+    el.classList.toggle('done');
+    const cb = el.querySelector('.checkbox');
+    cb.textContent = el.classList.contains('done') ? '✓' : '';
+    updateProgress();
+  }
+
+  function updateProgress() {
+    const all  = document.querySelectorAll('.step').length;
+    const done = document.querySelectorAll('.step.done').length;
+    const pct  = Math.round((done / all) * 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-text').textContent = `${done} of ${all} steps complete`;
+    document.getElementById('progress-pct').textContent  = pct + '%';
+  }
+
+  updateProgress();
+</script>
+</body>
+</html>
