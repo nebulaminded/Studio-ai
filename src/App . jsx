@@ -1,0 +1,48 @@
+import { useState, useRef, useEffect } from "react";
+
+const FREE_AI_USES = 3;
+
+const PLANS = {
+  free: { label: "Free",  price: "$0",     color: "#a0a0a0" },
+  pro:  { label: "Pro",   price: "$12/mo", color: "#f0c040" },
+  team: { label: "Team",  price: "$29/mo", color: "#60d0ff" },
+};
+
+const TEMPLATES = [
+  { id: 1, label: "Social Post",  w: 1080, h: 1080, bg: "#1a1a2e", accent: "#e94560" },
+  { id: 2, label: "Banner",       w: 1200, h: 628,  bg: "#0f3460", accent: "#60d0ff" },
+  { id: 3, label: "Story",        w: 1080, h: 1920, bg: "#16213e", accent: "#9b59b6" },
+  { id: 4, label: "Poster",       w: 794,  h: 1123, bg: "#2d2d2d", accent: "#f5a623" },
+  { id: 5, label: "Logo",         w: 800,  h: 800,  bg: "#fff",    accent: "#111" },
+  { id: 6, label: "Presentation", w: 1920, h: 1080, bg: "#111",    accent: "#9b59b6", pro: true },
+  { id: 7, label: "Resume",       w: 794,  h: 1123, bg: "#fafafa", accent: "#2c3e50", pro: true },
+  { id: 8, label: "Brand Kit",    w: 1200, h: 900,  bg: "#fffbe6", accent: "#e67e22", pro: true },
+];
+
+const FONTS = ["Playfair Display","Bebas Neue","Pacifico","Oswald","Lobster","Raleway","Cinzel","Dancing Script"];
+const COLORS = ["#fff","#111","#e94560","#f5a623","#9b59b6","#16c79a","#60d0ff","#f0c040","#ff6b6b","#4ecdc4","#45b7d1","#fed330"];
+
+let _id = 1;
+const uid = () => `el_${_id++}`;
+
+const defaultText = (x = 140, y = 120) => ({
+  id: uid(), type: "text",
+  x, y, text: "Double-click to edit",
+  font: "Playfair Display", size: 32, color: "#ffffff",
+  bold: false, italic: false, w: 320, h: 60,
+});
+
+async function startCheckout(plan) {
+  try {
+    const res = await fetch("/api/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan }),
+    });
+    const { url, error } = await res.json();
+    if (error) throw new Error(error);
+    window.location.href = url;
+  } catch (e) {
+    alert("Checkout error: " + e.message);
+  }
+}
