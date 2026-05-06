@@ -116,19 +116,17 @@ export default function App() {
     setAiLoading(true);
     setAiResult("");
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system: `You are a creative copywriter for a graphic design tool like Canva.
+     const res = await fetch("/api/generate", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    system: `You are a creative copywriter for a graphic design tool like Canva.
 The user gives you a prompt and you return SHORT, punchy, visually-ready text for their design.
 Reply with ONLY the copy — headline first, then optional 1-line subtext separated by a newline.
 Keep it concise and impactful. No quotes, no explanations.`,
-          messages: [{ role: "user", content: aiPrompt }],
-        }),
-      });
+    messages: [{ role: "user", content: aiPrompt }],
+  }),
+});
       const data = await res.json();
       const text = data.content?.map(b => b.text || "").join("") || "Creative copy here";
       setAiResult(text);
