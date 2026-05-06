@@ -128,7 +128,7 @@ Keep it concise and impactful. No quotes, no explanations.`,
   }),
 });
       const data = await res.json();
-      const text = data.content?.map(b => b.text || "").join("") || "Creative copy here";
+      const text = data.content?.map(b => b.text || "").join("") || "Error - try again";
       setAiResult(text);
       if (!isPro) setAiUses(u => u + 1);
     } catch (e) {
