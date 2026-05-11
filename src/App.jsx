@@ -604,6 +604,19 @@ Return ONLY the enhanced prompt — no explanation, no quotes. Make it rich and 
                     style={{width:24,height:24,borderRadius:5,background:c,cursor:"pointer",border:selEl.color===c?"2px solid #e94560":"2px solid transparent"}}/>
                 ))}
               </div>
+              {(selEl.type === "image" || selEl.type === "shape") && <>
+                <label style={{fontSize:11,color:"#555",display:"block",marginBottom:4}}>Width: {selEl.w}px</label>
+                <input type="range" min={50} max={800} value={selEl.w} onChange={e=>updateEl(selEl.id,{w:+e.target.value})}
+                  style={{width:"100%",marginBottom:8,accentColor:"#e94560"}}/>
+                <label style={{fontSize:11,color:"#555",display:"block",marginBottom:4}}>Height: {selEl.h}px</label>
+                <input type="range" min={50} max={800} value={selEl.h} onChange={e=>updateEl(selEl.id,{h:+e.target.value})}
+                  style={{width:"100%",marginBottom:10,accentColor:"#e94560"}}/>
+                <div style={{display:"flex",gap:6,marginBottom:10}}>
+                  <button onClick={()=>updateEl(selEl.id,{w:300,h:300})} style={{flex:1,background:"#1a1a28",border:"1px solid #2a2a3a",color:"#ccc",padding:"6px 0",borderRadius:6,cursor:"pointer",fontSize:11}}>Square</button>
+                  <button onClick={()=>updateEl(selEl.id,{w:400,h:225})} style={{flex:1,background:"#1a1a28",border:"1px solid #2a2a3a",color:"#ccc",padding:"6px 0",borderRadius:6,cursor:"pointer",fontSize:11}}>Wide</button>
+                  <button onClick={()=>updateEl(selEl.id,{w:500,h:500})} style={{flex:1,background:"#1a1a28",border:"1px solid #2a2a3a",color:"#ccc",padding:"6px 0",borderRadius:6,cursor:"pointer",fontSize:11}}>Large</button>
+                </div>
+              </>}
               <button onClick={deleteEl} style={{width:"100%",background:"transparent",border:"1px solid #3a1a1a",color:"#e94560",padding:"8px 0",borderRadius:7,cursor:"pointer",fontSize:13,marginTop:6}}>Delete Element</button>
             </>
           ) : (
@@ -617,7 +630,7 @@ Return ONLY the enhanced prompt — no explanation, no quotes. Make it rich and 
             {[...elements].reverse().map(el=>(
               <div key={el.id} onClick={()=>setSelected(el.id)}
                 style={{padding:"6px 8px",borderRadius:6,marginBottom:4,cursor:"pointer",fontSize:12,background:selected===el.id?"#1f1f30":"transparent",border:`1px solid ${selected===el.id?"#e94560":"transparent"}`,color:"#aaa"}}>
-                {el.type==="text" ? `T  ${el.text.slice(0,18)}` : `◼  ${el.shape}`}
+                {el.type==="text" ? `T  ${el.text.slice(0,18)}` : el.type==="image" ? `🎨  ${el.style||"image"}` : `◼  ${el.shape}`}
               </div>
             ))}
           </div>
