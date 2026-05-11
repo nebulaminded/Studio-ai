@@ -7,6 +7,15 @@ const STRIPE_PRICES = {
 };
 
 const FREE_AI_USES = 3;
+const FREE_IMG_USES = 3;
+
+const IMAGE_STYLES = [
+  { id: "realistic",   label: "Realistic",   icon: "📷", desc: "Photo-real images" },
+  { id: "illustrated", label: "Illustrated", icon: "🎨", desc: "Clean illustration style" },
+  { id: "artistic",    label: "Artistic",    icon: "🖼️", desc: "Fine art aesthetic" },
+  { id: "watercolor",  label: "Watercolor",  icon: "💧", desc: "Soft watercolor painting" },
+  { id: "sketch",      label: "Sketch",      icon: "✏️", desc: "Hand-drawn sketch" },
+];
 
 const PLANS = {
   free: { label: "Free",  price: "$0",     color: "#a0a0a0" },
@@ -73,9 +82,16 @@ export default function App() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiResult, setAiResult]   = useState("");
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState("ai");
   const [notification, setNotification] = useState(null);
   const [bgColor, setBgColor]     = useState("#1a1a2e");
   const [showProModal, setShowProModal] = useState(null);
+  const [imgPrompt, setImgPrompt]   = useState("");
+  const [imgStyle, setImgStyle]     = useState("realistic");
+  const [imgLoading, setImgLoading] = useState(false);
+  const [imgResult, setImgResult]   = useState(null);
+  const [imgUses, setImgUses]       = useState(0);
+  const [activeTab, setActiveTab]   = useState("copy");
 
   const canvasRef  = useRef(null);
   const dragOffset = useRef({ x: 0, y: 0 });
@@ -116,19 +132,19 @@ export default function App() {
     setAiLoading(true);
     setAiResult("");
     try {
-     const res = await fetch("/api/generate", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    system: `You are a creative copywriter for a graphic design tool like Canva.
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system: `You are a creative copywriter for a graphic design tool like Canva.
 The user gives you a prompt and you return SHORT, punchy, visually-ready text for their design.
 Reply with ONLY the copy — headline first, then optional 1-line subtext separated by a newline.
 Keep it concise and impactful. No quotes, no explanations.`,
-    messages: [{ role: "user", content: aiPrompt }],
-  }),
-});
+          messages: [{ role: "user", content: aiPrompt }],
+        }),
+      });
       const data = await res.json();
-      const text = data.content?.map(b => b.text || "").join("") || "Error - try again";
+      const text = data?.content?.[0]?.text || data?.content?.map(b => b.text || "").join("") || "Try again";
       setAiResult(text);
       if (!isPro) setAiUses(u => u + 1);
     } catch (e) {
@@ -150,6 +166,71 @@ Keep it concise and impactful. No quotes, no explanations.`,
     setAiResult("");
     setAiPrompt("");
     notify("Text added to canvas ✓", "success");
+  };
+
+  // ── AI Image generation ──
+  const runImgAI = async () => {
+    if (!imgPrompt.trim()) return;
+    if (!isPro && imgUses >= FREE_IMG_USES) { setUpgradeReason("image"); setShowUpgrade(true); return; }
+    setImgLoading(true);
+    setImgResult(null);
+    try {
+      const styleGuide = {
+        realistic:   "photorealistic, high detail, professional photography, 8k",
+        illustrated: "clean vector illustration, flat design, professional",
+        artistic:    "fine art, painterly, museum quality, masterpiece",
+        watercolor:  "soft watercolor painting, delicate brushstrokes, flowing colors",
+        sketch:      "hand-drawn pencil sketch, detailed line art, artistic",
+      };
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system: `You are an AI image prompt engineer. The user wants to generate an image for their design.
+Transform their simple description into a detailed, vivid image generation prompt.
+Style requested: ${styleGuide[imgStyle]}
+Return ONLY the enhanced prompt — no explanation, no quotes. Make it rich and descriptive.`,
+          messages: [{ role: "user", content: imgPrompt }],
+        }),
+      });
+      const data = await res.json();
+      const enhancedPrompt = data?.content?.[0]?.text || data?.content?.map(b => b.text || "").join("") || imgPrompt;
+      setImgResult({
+        prompt: enhancedPrompt,
+        style: imgStyle,
+        placeholder: true,
+      });
+      if (!isPro) setImgUses(u => u + 1);
+    } catch (e) {
+      notify("Error generating image — please try again.", "error");
+    }
+    setImgLoading(false);
+  };
+
+  const addImgToCanvas = () => {
+    if (!imgResult) return;
+    const el = {
+      id: uid(), type: "image",
+      x: 40, y: 40, w: 300, h: 200,
+      prompt: imgResult.prompt,
+      style: imgResult.style,
+      bg: imgResult.placeholder ? generateGradient(imgResult.style) : imgResult.url,
+    };
+    setElements(prev => [...prev, el]);
+    setImgResult(null);
+    setImgPrompt("");
+    notify("Image added to canvas ✓", "success");
+  };
+
+  const generateGradient = (style) => {
+    const gradients = {
+      realistic:   "linear-gradient(135deg,#667eea,#764ba2)",
+      illustrated: "linear-gradient(135deg,#f093fb,#f5576c)",
+      artistic:    "linear-gradient(135deg,#4facfe,#00f2fe)",
+      watercolor:  "linear-gradient(135deg,#a8edea,#fed6e3)",
+      sketch:      "linear-gradient(135deg,#d3cce3,#e9e4f0)",
+    };
+    return gradients[style] || gradients.realistic;
   };
 
   // ── Element ops ──
@@ -331,7 +412,9 @@ Keep it concise and impactful. No quotes, no explanations.`,
 
       {showUpgrade && (
         <div style={{background:"linear-gradient(90deg,#e94560,#f5a623)",padding:"10px 20px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <span style={{fontWeight:700,fontSize:14}}>✦ You've used all free AI generations. Upgrade for unlimited.</span>
+          <span style={{fontWeight:700,fontSize:14}}>
+            {upgradeReason === "image" ? "✦ You've used all free AI image generations. Upgrade for unlimited." : "✦ You've used all free AI generations. Upgrade for unlimited."}
+          </span>
           <div style={{display:"flex",gap:10}}>
             <button onClick={()=>setShowUpgrade(false)} style={{background:"transparent",border:"1px solid rgba(255,255,255,0.4)",color:"#fff",padding:"6px 14px",borderRadius:6,cursor:"pointer",fontSize:13}}>Dismiss</button>
             <button onClick={()=>{setShowUpgrade(false);setScreen("pricing")}} style={{background:"#fff",color:"#e94560",padding:"6px 14px",borderRadius:6,cursor:"pointer",fontWeight:700,fontSize:13,border:"none"}}>Upgrade →</button>
@@ -362,23 +445,76 @@ Keep it concise and impactful. No quotes, no explanations.`,
       <div style={{display:"flex",flex:1,overflow:"hidden"}}>
         {/* Left panel */}
         <div style={{width:224,background:"#0f0f14",borderRight:"1px solid #1a1a28",padding:16,overflowY:"auto",display:"flex",flexDirection:"column",gap:20}}>
-          {/* AI */}
-          <div>
-            <div style={{fontSize:11,fontWeight:700,letterSpacing:2,color:"#e94560",marginBottom:10}}>AI COPY ✦</div>
-            <textarea value={aiPrompt} onChange={e=>setAiPrompt(e.target.value)} placeholder="e.g. Summer sale for a luxury jewelry brand" rows={3}
-              style={{width:"100%",background:"#1a1a28",border:"1px solid #2a2a3a",borderRadius:8,color:"#fff",padding:"8px 10px",fontSize:12,resize:"none",boxSizing:"border-box",fontFamily:"Raleway"}}/>
-            {!isPro && <div style={{fontSize:11,color:"#555",margin:"4px 0"}}>{Math.max(0,FREE_AI_USES-aiUses)}/{FREE_AI_USES} free uses left</div>}
-            <button onClick={runAI} disabled={aiLoading}
-              style={{width:"100%",background:aiLoading?"#333":"linear-gradient(135deg,#e94560,#f5a623)",border:"none",color:"#fff",padding:"9px 0",borderRadius:7,cursor:aiLoading?"default":"pointer",fontWeight:700,fontSize:13,marginTop:4}}>
-              {aiLoading ? "Generating…" : "Generate ✦"}
-            </button>
-            {aiResult && (
-              <div style={{marginTop:10,background:"#1a1a28",border:"1px solid #2a2a3a",borderRadius:8,padding:10}}>
-                <div style={{fontSize:12,color:"#ccc",lineHeight:1.6,whiteSpace:"pre-wrap"}}>{aiResult}</div>
-                <button onClick={addAiText} style={{width:"100%",background:"#16c79a",border:"none",color:"#fff",padding:"8px 0",borderRadius:6,cursor:"pointer",fontWeight:700,fontSize:12,marginTop:8}}>Add to Canvas →</button>
-              </div>
-            )}
+          {/* Tabs */}
+          <div style={{display:"flex",gap:4,background:"#1a1a28",borderRadius:8,padding:3}}>
+            {[["copy","✍️ Copy"],["image","🎨 Image"]].map(([tab,label])=>(
+              <button key={tab} onClick={()=>setActiveTab(tab)}
+                style={{flex:1,padding:"7px 0",borderRadius:6,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,
+                  background:activeTab===tab?"linear-gradient(135deg,#e94560,#f5a623)":"transparent",
+                  color:activeTab===tab?"#fff":"#666"}}>
+                {label}
+              </button>
+            ))}
           </div>
+
+          {/* AI Copy Tab */}
+          {activeTab === "copy" && (
+            <div>
+              <div style={{fontSize:11,fontWeight:700,letterSpacing:2,color:"#e94560",marginBottom:10}}>AI COPY ✦</div>
+              <textarea value={aiPrompt} onChange={e=>setAiPrompt(e.target.value)} placeholder="e.g. Summer sale for a luxury jewelry brand" rows={3}
+                style={{width:"100%",background:"#1a1a28",border:"1px solid #2a2a3a",borderRadius:8,color:"#fff",padding:"8px 10px",fontSize:12,resize:"none",boxSizing:"border-box",fontFamily:"Raleway"}}/>
+              {!isPro && <div style={{fontSize:11,color:"#555",margin:"4px 0"}}>{Math.max(0,FREE_AI_USES-aiUses)}/{FREE_AI_USES} free uses left</div>}
+              <button onClick={runAI} disabled={aiLoading}
+                style={{width:"100%",background:aiLoading?"#333":"linear-gradient(135deg,#e94560,#f5a623)",border:"none",color:"#fff",padding:"9px 0",borderRadius:7,cursor:aiLoading?"default":"pointer",fontWeight:700,fontSize:13,marginTop:4}}>
+                {aiLoading ? "Generating…" : "Generate ✦"}
+              </button>
+              {aiResult && (
+                <div style={{marginTop:10,background:"#1a1a28",border:"1px solid #2a2a3a",borderRadius:8,padding:10}}>
+                  <div style={{fontSize:12,color:"#ccc",lineHeight:1.6,whiteSpace:"pre-wrap"}}>{aiResult}</div>
+                  <button onClick={addAiText} style={{width:"100%",background:"#16c79a",border:"none",color:"#fff",padding:"8px 0",borderRadius:6,cursor:"pointer",fontWeight:700,fontSize:12,marginTop:8}}>Add to Canvas →</button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* AI Image Tab */}
+          {activeTab === "image" && (
+            <div>
+              <div style={{fontSize:11,fontWeight:700,letterSpacing:2,color:"#e94560",marginBottom:10}}>AI IMAGE ✦</div>
+              <textarea value={imgPrompt} onChange={e=>setImgPrompt(e.target.value)} placeholder="e.g. Luxury gold jewelry on black velvet background" rows={3}
+                style={{width:"100%",background:"#1a1a28",border:"1px solid #2a2a3a",borderRadius:8,color:"#fff",padding:"8px 10px",fontSize:12,resize:"none",boxSizing:"border-box",fontFamily:"Raleway"}}/>
+              <div style={{fontSize:11,fontWeight:700,color:"#666",margin:"10px 0 6px",letterSpacing:1}}>STYLE</div>
+              <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:10}}>
+                {IMAGE_STYLES.map(s=>(
+                  <button key={s.id} onClick={()=>setImgStyle(s.id)}
+                    style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:7,border:`1px solid ${imgStyle===s.id?"#e94560":"#2a2a3a"}`,background:imgStyle===s.id?"rgba(233,69,96,0.1)":"#1a1a28",cursor:"pointer",textAlign:"left"}}>
+                    <span style={{fontSize:14}}>{s.icon}</span>
+                    <div>
+                      <div style={{color:imgStyle===s.id?"#e94560":"#ccc",fontSize:12,fontWeight:700}}>{s.label}</div>
+                      <div style={{color:"#555",fontSize:10}}>{s.desc}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              {!isPro && <div style={{fontSize:11,color:"#555",margin:"4px 0"}}>{Math.max(0,FREE_IMG_USES-imgUses)}/{FREE_IMG_USES} free uses left</div>}
+              <button onClick={runImgAI} disabled={imgLoading}
+                style={{width:"100%",background:imgLoading?"#333":"linear-gradient(135deg,#9b59b6,#e94560)",border:"none",color:"#fff",padding:"9px 0",borderRadius:7,cursor:imgLoading?"default":"pointer",fontWeight:700,fontSize:13}}>
+                {imgLoading ? "Creating…" : "Generate Image ✦"}
+              </button>
+              {imgResult && (
+                <div style={{marginTop:10,background:"#1a1a28",border:"1px solid #2a2a3a",borderRadius:8,padding:10}}>
+                  <div style={{height:100,borderRadius:6,background:generateGradient(imgResult.style),display:"flex",alignItems:"center",justifyContent:"center",marginBottom:8,position:"relative"}}>
+                    <div style={{textAlign:"center"}}>
+                      <div style={{fontSize:20}}>{IMAGE_STYLES.find(s=>s.id===imgResult.style)?.icon}</div>
+                      <div style={{fontSize:10,color:"rgba(255,255,255,0.7)",marginTop:4,padding:"0 8px"}}>{imgResult.style} style</div>
+                    </div>
+                  </div>
+                  <div style={{fontSize:10,color:"#555",lineHeight:1.4,marginBottom:8}}>{imgResult.prompt.slice(0,80)}…</div>
+                  <button onClick={addImgToCanvas} style={{width:"100%",background:"#16c79a",border:"none",color:"#fff",padding:"8px 0",borderRadius:6,cursor:"pointer",fontWeight:700,fontSize:12}}>Add to Canvas →</button>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Add elements */}
           <div>
@@ -424,6 +560,15 @@ Keep it concise and impactful. No quotes, no explanations.`,
                 <div key={el.id} onMouseDown={e=>onMouseDown(e,el)}
                   style={{position:"absolute",left:el.x*scale,top:el.y*scale,width:el.w*scale,height:el.shape==="line"?3:el.h*scale,cursor:"move",outline:isSel?"2px dashed rgba(233,69,96,0.8)":"none",
                     background:el.shape!=="line"?el.color:"transparent",borderRadius:el.shape==="circle"?"50%":0,borderBottom:el.shape==="line"?`3px solid ${el.color}`:"none"}}/>
+              );
+              if (el.type === "image") return (
+                <div key={el.id} onMouseDown={e=>onMouseDown(e,el)}
+                  style={{position:"absolute",left:el.x*scale,top:el.y*scale,width:el.w*scale,height:el.h*scale,cursor:"move",outline:isSel?"2px dashed rgba(233,69,96,0.8)":"none",background:el.bg,borderRadius:4,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
+                  <div style={{textAlign:"center"}}>
+                    <div style={{fontSize:28*scale}}>{IMAGE_STYLES.find(s=>s.id===el.style)?.icon||"🎨"}</div>
+                    <div style={{fontSize:9*scale,color:"rgba(255,255,255,0.7)",marginTop:2}}>{el.style}</div>
+                  </div>
+                </div>
               );
               return null;
             })}
